@@ -1,0 +1,42 @@
+/* Reset some default styles */
+body {
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    background-color: #f3f4f6; /* Light gray background */
+}
+
+/* Gallery container (already centered by Tailwind in HTML) */
+#gallery {
+    /* Tailwind grid handles columns and gaps */
+}
+
+/* Images in the gallery */
+#gallery img {
+    border-radius: 0.5rem; /* rounded corners */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* soft shadow */
+    object-fit: cover;
+    width: 100%;
+    height: auto;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Hover effect */
+#gallery img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+/* Page title */
+h1 {
+    font-size: 2rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #111827; /* Dark gray */
+}
+
+/* Responsive adjustments if needed */
+@media (max-width: 640px) {
+    h1 {
+        font-size: 1.5rem;
+    }
+}

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="el">
+    <head>
+        <meta charset="utf-8">
+        <meta name="description" content="xkpfoto">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Xkpfoto</title>
+        <link rel="stylesheet" href="../styles.css">
+        <link rel="preload"
+              href="../fonts/PlayfairDisplay-ExtraBold.woff2"
+              as="font"
+              type="font/woff2"
+              crossorigin>
+
+        <link rel="preload"
+              href="../fonts/SourceSans3-Regular.woff2"
+              as="font"
+              type="font/woff2"
+              crossorigin>
+        <link rel="icon" type="image/svg+xml" href="../jpg/favicon.svg" />
+    </head>
+    <body>
+        <div class="header-container">
+            <input type="checkbox" id="sidebar-active">
+            <label for="sidebar-active" class="open-sidebar-button">
+                <svg xmlns="http://www.w3.org/2000/svg" height="40" viewBox="0 -960 960 960" width="40"><path d="M120-240v-80h720v80H120Zm0-200v-80h720v80H120Zm0-200v-80h720v80H120Z"/></svg>
+            </label>
+            <label id="overlay" for="sidebar-active"></label>
+            <div class="links-container">
+                <label for="sidebar-active" class="close-sidebar-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="40" viewBox="0 -960 960 960" width="40"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+                </label>                
+                <a class="nav-link nav-item" href="../index.html">HOME</a>
+                <a class="nav-link nav-item" href="./football.html">FOOTBALL</a>
+                <a class="nav-link nav-item" href="./basketball.html">BASKETBALL</a>
+            </div>
+        </div>
+        <div class="gallery-wrapper">
+          <div id="gallery" class="gallery"></div>
+        </div>
+
+        <div id="lightbox" class="lightbox hidden">
+          <button class="lightbox-close">&times;</button>
+        
+          <!-- wrapper for image + arrows -->
+          <div class="lightbox-content">
+            <img id="lightbox-img" alt="">
+            <div class="lightbox-arrows">
+              <button class="lightbox-nav prev">&#10094;</button>
+              <button class="lightbox-nav next">&#10095;</button>
+            </div>
+          </div>
+        </div>
+
+
+
+        <script src="../js/gallery-conference.js"></script>
+        <script src="../js/gallery.js"></script>
+        <script>
+        // ===== gallery.js =====
+
+// DOM elements
+const gallery = document.getElementById("gallery");
+const lightbox = document.getElementById("lightbox");
+const lightboxImg = document.getElementById("lightbox-img");
+const closeBtn = document.querySelector(".lightbox-close");
+const prevBtn = document.querySelector(".lightbox-nav.prev");
+const nextBtn = document.querySelector(".lightbox-nav.next");
+
+let shuffled = [];
+let currentIndex = 0;
+
+// ----- HELPER FUNCTIONS -----
+
+// Shuffle array
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+// Netlify image helper
+function netlifyImage(src, width) {
+  return `/.netlify/images?url=${encodeURIComponent(src)}&w=${width}`;
+}
+
+// ----- LIGHTBOX FUNCTIONS -----
+function openLightbox(index) {
+  currentIndex = index;
+  const src = shuffled[currentIndex];
+  const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+  lightboxImg.classList.remove("loaded", "slide-left", "slide-right");
+  lightbox.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+  lightboxImg.classList.add("loading");
+
+
+  if (isMobile) {
+    // Mobile: use medium image
+    lightboxImg.src = netlifyImage(src, 800);
+    lightboxImg.classList.remove("loading");
+    return;
+  }
+
+  // Desktop: medium first
+  lightboxImg.src = netlifyImage(src, 800);
+
+  // Load high-res
+  const highRes = new Image();
+  highRes.src = netlifyImage(src, 1600);
+  highRes.onload = () => {
+    lightboxImg.src = highRes.src;
+    lightboxImg.classList.remove("loading");
+  };
+}
+
+function closeLightbox() {
+  lightbox.classList.add("hidden");
+  lightboxImg.src = "";
+  document.body.style.overflow = "";
+}
+
+function showNext() {
+  currentIndex = (currentIndex + 1) % shuffled.length;
+  openLightbox(currentIndex);
+}
+
+function showPrev() {
+  currentIndex = (currentIndex - 1 + shuffled.length) % shuffled.length;
+  openLightbox(currentIndex);
+}
+
+// ----- EVENT LISTENERS -----
+
+// Close button
+closeBtn.addEventListener("click", closeLightbox);
+
+// Click outside image closes
+lightbox.addEventListener("click", e => {
+  if (e.target === lightbox) closeLightbox();
+});
+
+// Arrow buttons
+nextBtn.addEventListener("click", showNext);
+prevBtn.addEventListener("click", showPrev);
+
+// Keyboard navigation
+document.addEventListener("keydown", e => {
+  if (lightbox.classList.contains("hidden")) return;
+  if (e.key === "ArrowRight") showNext();
+  if (e.key === "ArrowLeft") showPrev();
+  if (e.key === "Escape") closeLightbox();
+});
+
+// ----- MOBILE SWIPE -----
+let touchStartX = 0;
+let touchEndX = 0;
+
+lightbox.addEventListener("touchstart", e => {
+  touchStartX = e.changedTouches[0].screenX;
+});
+
+lightbox.addEventListener("touchend", e => {
+  touchEndX = e.changedTouches[0].screenX;
+  handleSwipe();
+});
+
+function handleSwipe() {
+  const diff = touchEndX - touchStartX;
+
+  // Minimum distance to qualify as a swipe
+  if (Math.abs(diff) < 40) return;
+
+  const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+  if (diff > 0) {
+    // Swipe right → previous
+    if (isMobile) {
+      // MOBILE: do not wrap around
+      if (currentIndex > 0) showPrev();
+    } else {
+      showPrev(); // desktop can wrap
+    }
+  } else {
+    // Swipe left → next
+    if (isMobile) {
+      // MOBILE: do not wrap around
+      if (currentIndex < shuffled.length - 1) showNext();
+    } else {
+      showNext(); // desktop can wrap
+    }
+  }
+}
+
+
+// ----- GALLERY INITIALIZATION -----
+document.addEventListener("DOMContentLoaded", () => {
+  if (!images || !images.length) return;
+
+  shuffled = shuffleArray([...images]);
+
+  const preloadImages = shuffled.map(src => {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.src = netlifyImage(src, 800);
+      img.onload = () => resolve(src);
+      img.onerror = () => resolve(null);
+    });
+  });
+
+  Promise.all(preloadImages).then(readyImages => {
+    const fragment = document.createDocumentFragment();
+
+    readyImages.forEach((src, index) => {
+      if (!src) return;
+
+      const img = document.createElement("img");
+      img.src = netlifyImage(src, 800);
+      img.srcset = [400, 600, 800, 1000, 1200, 1600, 2000]
+        .map(w => `${netlifyImage(src, w)} ${w}w`)
+        .join(", ");
+      img.sizes = `
+        (max-width: 640px) 95vw,
+        (max-width: 1024px) 45vw,
+        (max-width: 1600px) 30vw,
+        25vw
+      `;
+      img.loading = "lazy";
+      img.className = "fade-in-start w-full h-auto rounded-lg shadow-md object-cover";
+      img.style.cursor = "zoom-in";
+
+      img.addEventListener("click", () => openLightbox(index));
+      fragment.appendChild(img);
+    });
+
+    gallery.appendChild(fragment);
+
+    requestAnimationFrame(() => {
+      document.querySelectorAll(".fade-in-start").forEach(img => {
+        img.classList.add("loaded");
+      });
+    });
+  });
+});
+
+        </script>
+    </body>
+</html>
